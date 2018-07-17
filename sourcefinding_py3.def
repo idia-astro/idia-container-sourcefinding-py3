@@ -1,0 +1,223 @@
+Bootstrap: debootstrap
+MirrorURL: http://ftp.leg.uct.ac.za/ubuntu/
+OSVersion: xenial
+Include: software-properties-common
+
+%environment
+        export PATH=/software/ds9/:$PATH
+        export INSTALLER_PATH=/installer
+        export SOFTWARE_PATH=/software
+        export PUMA_DIR=$INSTALLER_PATH/PUMA
+        export PATH=$PUMA_DIR/scripts:$PATH
+        export SOFIA_MODULE_PATH="/installer/SoFiA/build/lib.linux-x86_64-2.7"
+        export SOFIA_PIPELINE_PATH="/installer/SoFiA/sofia_pipeline.py"
+        export PATH="$PATH:/installer/SoFiA:/installer/SoFiA/gui"
+        export PATH=/software/pink/pink-2018/bin:$PATH
+        export PATH=$SOFTWARE_PATH/Montage/bin:$PATH
+        export PATH="/anaconda3/bin:$PATH"
+        export PATH=$SOFTWARE_PATH/pink/bin:$PATH
+        export LC_ALL=C
+        unset XDG_RUNTIME_DIR
+
+%post
+        # Create Installation Directories and export paths. This is needed as part of post.
+        # %environment scriptlet does not define these paths during %post, only after.
+        mkdir -p /software/ /installer
+        export INSTALLER_PATH=/installer
+        export SOFTWARE_PATH=/software
+
+        # Installation of the KERN2 packages
+        apt-get update -y
+        apt-get install -y wget vim apt-utils git bzip2 
+        add-apt-repository -s ppa:kernsuite/kern-2
+        add-apt-repository ppa:jonathonf/python-3.6
+        apt-add-repository multiverse
+        apt-add-repository restricted
+        apt-get update -y
+
+        apt-get install -y cassbeam python-qwt5-qt4 python-qwt5-doc tempo purify casacore-dev casacore-doc casacore-tools casarest casacore-data meqtrees-timba python-purr python-tigger python-meqtrees-cattery python-owlcat python-kittens python-pyxis python-meqtrees-timba rpfits meqtrees libmeqtrees-timba0 aoflagger wsclean sagecal mt-imager oskar python-casacore python-attrdict python-montblanc python-pymoresane obit parseltongue libcasasynthesis-dev libcasasynthesis1 libspdlog-dev libcasa-casa2 libcasa-coordinates2 libcasa-derivedmscal2 libcasa-fits2 libcasa-images2 libcasa-lattices2 libcasa-meas2 libcasa-measures2 libcasa-mirlib2 libcasa-ms2 libcasa-msfits2 libcasa-python2 libcasa-python3-2 libcasa-scimath-f2 libcasa-scimath2 libcasa-tables2 python3-casacore psrcat presto tempo2 texlive-fonts-recommended dialog
+        apt-get install -y sigproc psrchive multinest dspsr python-presto python-sourcery singularity-container chgcentre python-tkp libsopt-dev libsopt2.0 libpurify-dev libpurify2.0 aoflagger-dev libaoflagger0 libwsclean0 wsclean-dev python-katversion python-katpoint python-katdal python-rfimasker simfast21 dysco 21cmfast libapplcommon libawimager2lib libbbscontrol libbbskernel libblob libcommon libdocker libdppp-aoflag libdppp libelementresponse liblmwcommon liblofar-pyparameterset liblofar-pyparmdb liblofar-pystationresponse
+        apt-get install -y liblofar-pytools liblofarft liblofarstman libmessagebus libms libmslofar libparmdb libplc libpythondppp libspwcombine libstationresponse libtransport lofar-dev lofar-doc python-lofar stimela msutils simms casalite cub-dev python-transitions python3-transitions python-scatterbrane tmv-dev tmv0 galsim-dev galsim0 galsim python-galsim drive-casa sigpyproc tirific karma aips python3.6 qt5-default dvipng texlive-latex-extra
+        # A corruption occurs with texlive and removing this file fixes the problem.
+        rm /var/lib/dpkg/info/texlive-fonts-recommended.list
+
+
+        #Installation of Anaconda
+        cd $INSTALLER_PATH
+        wget https://repo.continuum.io/archive/Anaconda3-5.1.0-Linux-x86_64.sh
+        bash Anaconda3-5.1.0-Linux-x86_64.sh -b -p /anaconda3
+        rm Anaconda3-5.1.0-Linux-x86_64.sh
+        export PATH="/anaconda3/bin:$PATH"
+        conda update -y conda
+
+        # Install pip and ipykernel for use with jupyter hub.
+        pip install --upgrade pip==9.0.3
+        pip install --upgrade --no-deps statsmodels
+
+        # Python3 Pip install and Python modules
+        apt-get install -y python2.7 python-pip
+        pip install --upgrade pip==9.0.3
+        pip install scipy astropy configobj sqlalchemy hips IPython==5.0 ipykernel
+
+        # Additional packages installed via pip can be added here.
+        pip install atpy sourcery  git+https://github.com/PaulHancock/Aegean.git pandas scikit-learn astroml statsmodels aplpy seaborn glue pymoc pyregion astroquery  numba WCSAxes docopt mpld3 astroML astroML_addons healpy pyvo nway sep theano tensorflow keras h5py scikit-plot  emcee scikit-image corner kapteyn pyspark
+
+        # Install Java runtime environment and accept the license agreement via debconf
+         add-apt-repository -y ppa:webupd8team/java
+         apt-get update
+         echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections
+         echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 seen true" | debconf-set-selections
+         apt-get install -y oracle-java8-installer
+
+        # Install Tractor - http://thetractor.org/
+        cd $INSTALLER_PATH
+        apt-get install -y swig
+        pip install fitsio somoclu
+        wget -O - https://raw.github.com/dstndstn/tractor/master/checkout.sh | bash
+        cd tractor
+        make && python setup.py install
+
+        # Install DS9 - http://ds9.si.edu/site/Home.html
+        mkdir $SOFTWARE_PATH/ds9
+        cd $SOFTWARE_PATH/ds9
+        wget http://ds9.si.edu/download/ubuntu16/ds9.ubuntu16.7.5.tar.gz -O - | tar -xz
+
+        # Install Astrometry
+        cd $INSTALLER_PATH
+        apt-get install -y libcairo2-dev libnetpbm10-dev netpbm libpng12-dev libjpeg-dev python-pyfits python-dev zlib1g-dev libbz2-dev
+        wget http://astrometry.net/downloads/astrometry.net-latest.tar.gz -O - | tar -xz
+        # tar xfvz astrometry.net-*
+        cd astrometry.net-*
+        make && make py && make extra && make install
+
+        # Image mosaicing & source extraction software : scamp, sextractor, swarp at https://www.astromatic.net
+        cd $INSTALLER_PATH
+        apt-get install -y libfftw3-dev libblas-dev libatlas-base-dev libplplot-dev libshp-dev
+        wget http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz -O - | tar -xz
+        # tar xfvz cdsclient.tar.gz
+        cd $INSTALLER_PATH/cdsclient-*
+        ./configure && make && make install
+        cd $INSTALLER_PATH
+        wget https://www.astromatic.net/download/sextractor/sextractor-2.19.5.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/scamp/scamp-2.0.4.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/swarp/swarp-2.38.0.tar.gz -O - | tar -xz
+        # tar xfvz sextractor-2.19.5.tar.gz && tar xfvz scamp-2.0.4.tar.gz && tar xfvz swarp-2.38.0.tar.gz
+
+        cd $INSTALLER_PATH/scamp-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/sextractor-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/swarp-*
+        ./configure && make && make install
+
+        # Installation of PyBDSF
+        apt-get install -y libboost-python-dev gfortran
+        pip2 install setuptools numpy scipy
+        cd $INSTALLER/
+        git clone https://github.com/lofar-astron/PyBDSF.git
+        cd PyB*
+        python2.7 setup.py install
+
+
+        #Installation of PUMA
+        cd $INSTALLER_PATH
+        git clone https://github.com/JLBLine/PUMA.git
+        export PUMA_DIR=$INSTALLER_PATH/PUMA
+        export PATH=$PUMA_DIR/scripts:$PATH
+        cd $PUMA_DIR/original_cats
+        tar -vxjf vlssr_names.fits.tar.bz2
+        tar -vxjf vizier_mwacs.fits.tar.bz2
+        tar -vxjf vizier_mrc.fits.tar.bz2
+        tar -vxjf sumss_names.fits.tar.bz2
+        tar -vxjf vizier_nvss.fits.tar.bz2
+        chmod a+x $PUMA_DIR/examples/timing.sh
+
+        #Installation of SoFiA
+        cd $INSTALLER_PATH
+        git clone https://github.com/SoFiA-Admin/SoFiA.git
+        cd SoFiA
+        python setup.py build --force
+
+        # Montage 5.x
+        cd $SOFTWARE_PATH
+        wget -O - http://montage.ipac.caltech.edu/download/Montage_v5.0.tar.gz | tar zx
+        cd Montage
+        make
+
+        # Install montage-wrapper
+        pip install montage-wrapper
+
+
+        # SED fitting software, e.g. CIGALE : http://cigale.lam.fr
+        pip install astropy numpy scipy sqlalchemy matplotlib configobj
+        cd $INSTALLER_PATH
+        wget -O $INSTALLER_PATH/cigale-v0.11.0.tar.gz https://gitlab.lam.fr/cigale/cigale/repository/archive.tar.gz?ref=v0.11.0
+        tar xfvz cigale-v0.11.0.tar.gz
+        rm cigale-v0.11.0.tar.gz
+        cd cigale-*
+        python3 setup.py build
+        python3 setup.py develop
+
+        #Installation of Ginga
+        cd $INSTALLER_PATH
+        git clone https://github.com/ejeschke/ginga.git
+        cd ginga
+        python setup.py build
+        python setup.py install
+
+        # Install Scikits-bootstrap
+        cd $INSTALLER_PATH
+        git clone https://github.com/cgevans/scikits-bootstrap.git
+        cd scikits-bootstrap
+
+
+        python setup.py install
+
+        # Install statsmodels
+        #cd $INSTALLER_PATH
+        #git clone https://github.com/statsmodels/statsmodels.git
+        #cd statsmodels
+        #python setup.py install
+
+        #Install sciserver
+        cd $INSTALLER_PATH
+        git clone http://github.com/sciserver/SciScript-Python.git
+        cd SciScript-Python/py3
+        python3 setup.py install
+
+        # GPz - https://github.com/OxfordML/GPz
+        git clone https://github.com/OxfordML/GPz $SOFTWARE_PATH/GPz
+
+        # upgrade matplotlib
+        pip install --upgrade matplotlib
+
+        #Anaconda install related packages
+        conda install -yc astropy astroquery astroplan ccdproc  ginga  glueviz  photutils  pydl  pyregion  regions  reproject  specutils
+
+        # Installing galfit
+        cd  $SOFTWARE_PATH
+        #mkdir galfit/bin
+        wget https://users.obs.carnegiescience.edu/peng/work/galfit/galfit3-debian64.tar.gz -O - | tar -xz
+
+
+        #Installation of eazy-photoz
+        cd $INSTALLER_PATH
+        git clone https://github.com/gbrammer/eazy-photoz.git eazy-photoz
+        cd eazy-photoz/src
+        make
+
+
+        # Create /users to bind home directories into the container.
+         mkdir -p /users /scratch /data
+
+        # Cleanup the container
+        apt-get clean
+        apt-get autoclean
+
+%runscript
+#!/bin/sh
+/usr/bin/python "$@"
+
+
+
+

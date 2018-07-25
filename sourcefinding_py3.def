@@ -57,7 +57,8 @@ Include: software-properties-common
         # Python3 Pip install and Python modules
         apt-get install -y python2.7 python-pip
         pip install --upgrade pip==9.0.3
-        pip install scipy astropy configobj sqlalchemy hips IPython==5.0 ipykernel
+        pip install scipy astropy configobj sqlalchemy hips IPython ipykernel 
+        pip install --upgrade ipykernel
 
         # Additional packages installed via pip can be added here.
         pip install atpy sourcery  git+https://github.com/PaulHancock/Aegean.git pandas scikit-learn astroml statsmodels aplpy seaborn glue pymoc pyregion astroquery  numba WCSAxes docopt mpld3 astroML astroML_addons healpy pyvo nway sep theano tensorflow keras h5py scikit-plot  emcee scikit-image corner kapteyn pyspark

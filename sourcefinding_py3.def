@@ -40,6 +40,9 @@ Include: software-properties-common
         apt-get install -y liblofar-pytools liblofarft liblofarstman libmessagebus libms libmslofar libparmdb libplc libpythondppp libspwcombine libstationresponse libtransport lofar-dev lofar-doc python-lofar stimela msutils simms casalite cub-dev python-transitions python3-transitions python-scatterbrane tmv-dev tmv0 galsim-dev galsim0 galsim python-galsim drive-casa sigpyproc tirific karma aips python3.6 qt5-default dvipng texlive-latex-extra
         # A corruption occurs with texlive and removing this file fixes the problem.
         rm /var/lib/dpkg/info/texlive-fonts-recommended.list
+        
+        apt-get install -y python2.7 python-pip
+        pip2 install --upgrade pip
 
 
         #Installation of Anaconda
@@ -50,19 +53,15 @@ Include: software-properties-common
         export PATH="/anaconda3/bin:$PATH"
         conda update -y conda
 
-        # Install pip and ipykernel for use with jupyter hub.
-        pip install --upgrade pip==9.0.3
-        pip install --upgrade --no-deps statsmodels
-
-        # Python3 Pip install and Python modules
-        apt-get install -y python2.7 python-pip
-        pip install --upgrade pip==9.0.3
+        # Python Pip install and Python modules
+        pip install --upgrade pip
         pip install scipy astropy configobj sqlalchemy hips IPython ipykernel 
         pip install --upgrade ipykernel
 
         # Additional packages installed via pip can be added here.
         pip install atpy sourcery  git+https://github.com/PaulHancock/Aegean.git pandas scikit-learn astroml statsmodels aplpy seaborn glue pymoc pyregion astroquery  numba WCSAxes docopt mpld3 astroML astroML_addons healpy pyvo nway sep theano tensorflow keras h5py scikit-plot  emcee scikit-image corner kapteyn pyspark
-
+        pip install --upgrade --no-deps statsmodels
+        
         # Install Java runtime environment and accept the license agreement via debconf
          add-apt-repository -y ppa:webupd8team/java
          apt-get update

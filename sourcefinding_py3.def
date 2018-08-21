@@ -4,18 +4,22 @@ OSVersion: xenial
 Include: software-properties-common
 
 %environment
-        export PATH=/software/ds9/:$PATH
+
         export INSTALLER_PATH=/installer
         export SOFTWARE_PATH=/software
+        export PATH=$SOFTWARE_PATH:$PATH
         export PUMA_DIR=$INSTALLER_PATH/PUMA
+        export PATH=$SOFTWARE_PATH/ds9:$PATH
         export PATH=$PUMA_DIR/scripts:$PATH
         export SOFIA_MODULE_PATH="/installer/SoFiA/build/lib.linux-x86_64-2.7"
         export SOFIA_PIPELINE_PATH="/installer/SoFiA/sofia_pipeline.py"
         export PATH="$PATH:/installer/SoFiA:/installer/SoFiA/gui"
         export PATH=/software/pink/pink-2018/bin:$PATH
         export PATH=$SOFTWARE_PATH/Montage/bin:$PATH
+        export PATH=$SOFTWARE_PATH/AGNfitter:$PATH
         export PATH="/anaconda3/bin:$PATH"
         export PATH=$SOFTWARE_PATH/pink/bin:$PATH
+        export PATH=$PATH:$INSTALLER_PATH/sed3fit_pkg/sed3fit/
         export LC_ALL=C
         unset XDG_RUNTIME_DIR
 
@@ -44,12 +48,11 @@ Include: software-properties-common
         apt-get install -y python2.7 python-pip
         pip2 install --upgrade pip
 
-
         #Installation of Anaconda
         cd $INSTALLER_PATH
-        wget https://repo.continuum.io/archive/Anaconda3-5.1.0-Linux-x86_64.sh
-        bash Anaconda3-5.1.0-Linux-x86_64.sh -b -p /anaconda3
-        rm Anaconda3-5.1.0-Linux-x86_64.sh
+        wget https://repo.continuum.io/archive/Anaconda3-5.2.0-Linux-x86_64.sh
+        bash Anaconda3-5.2.0-Linux-x86_64.sh -b -p /anaconda3
+        rm Anaconda3-5.2.0-Linux-x86_64.sh
         export PATH="/anaconda3/bin:$PATH"
         conda update -y conda
 
@@ -101,8 +104,6 @@ Include: software-properties-common
         wget https://www.astromatic.net/download/sextractor/sextractor-2.19.5.tar.gz -O - | tar -xz
         wget https://www.astromatic.net/download/scamp/scamp-2.0.4.tar.gz -O - | tar -xz
         wget https://www.astromatic.net/download/swarp/swarp-2.38.0.tar.gz -O - | tar -xz
-        # tar xfvz sextractor-2.19.5.tar.gz && tar xfvz scamp-2.0.4.tar.gz && tar xfvz swarp-2.38.0.tar.gz
-
         cd $INSTALLER_PATH/scamp-*
         ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
         cd $INSTALLER_PATH/sextractor-*
@@ -147,16 +148,19 @@ Include: software-properties-common
         # Install montage-wrapper
         pip install montage-wrapper
 
-
         # SED fitting software, e.g. CIGALE : http://cigale.lam.fr
         pip install astropy numpy scipy sqlalchemy matplotlib configobj
         cd $INSTALLER_PATH
-        wget -O $INSTALLER_PATH/cigale-v0.11.0.tar.gz https://gitlab.lam.fr/cigale/cigale/repository/archive.tar.gz?ref=v0.11.0
-        tar xfvz cigale-v0.11.0.tar.gz
-        rm cigale-v0.11.0.tar.gz
+        wget -O - https://gitlab.lam.fr/cigale/cigale/repository/archive.tar.gz?ref=v0.12.1 | tar zx
         cd cigale-*
         python3 setup.py build
         python3 setup.py develop
+
+        # SED3FIT
+        cd $INSTALLER_PATH
+        wget -O - http://cosmos.ipac.caltech.edu/system/media_files/binaries/70/original/sed3fit_pkg_v2.tgz | tar zx
+        cd sed3fit_pkg/sed3fit/
+        make
 
         #Installation of Ginga
         cd $INSTALLER_PATH
@@ -169,8 +173,6 @@ Include: software-properties-common
         cd $INSTALLER_PATH
         git clone https://github.com/cgevans/scikits-bootstrap.git
         cd scikits-bootstrap
-
-
         python setup.py install
 
         # Install statsmodels
@@ -199,24 +201,41 @@ Include: software-properties-common
         #mkdir galfit/bin
         wget https://users.obs.carnegiescience.edu/peng/work/galfit/galfit3-debian64.tar.gz -O - | tar -xz
 
-
         #Installation of eazy-photoz
         cd $INSTALLER_PATH
         git clone https://github.com/gbrammer/eazy-photoz.git eazy-photoz
         cd eazy-photoz/src
         make
 
+        # https://github.com/tqdm/tqdm
+        pip install --upgrade tqdm
+
+        # Install additional Jupyter modules
+        # https://nbdime.readthedocs.io/en/stable/
+        # https://nbconvert.readthedocs.io/en/latest/index.html
+        # https://pypi.org/project/vizic/
+        pip install --upgrade nbdime nbconvert
+
+        # Packages to keep Mattia happy
+        apt install -y screen tcsh lftp nano emacs
+
+        # Packages for various students
+        pip install --upgrade opencv-python easydict
+
+		  # AGNfitter
+        pip install acor
+        cd  $SOFTWARE_PATH
+        git clone https://github.com/GabrielaCR/AGNfitter
 
         # Create /users to bind home directories into the container.
-         mkdir -p /users /scratch /data
+        mkdir -p /users /scratch /data
 
         # Cleanup the container
         apt-get clean
         apt-get autoclean
 
 %runscript
-#!/bin/sh
-/usr/bin/python "$@"
+/anaconda3/bin/python "$@"
 
 
 

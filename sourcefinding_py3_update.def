@@ -1,0 +1,114 @@
+Bootstrap: localimage
+From: /mnt/containers/sourcefinding_py3_update/sourcefinding_py3-2018-08-30-tmp.simg
+Include: software-properties-common
+
+%environment
+
+        export INSTALLER_PATH=/installer
+        export SOFTWARE_PATH=/software
+        export PATH=$SOFTWARE_PATH:$PATH
+        export PATH="/anaconda3/bin:$PATH"
+        export BLOBCAT_PATH=$INSTALLER_PATH/BLOBCAT
+        export PATH=$BLOBCAT_PATH:$PATH
+
+%setup
+        #Copy patch file for blobcat
+        cp blobcat_patch.diff $SINGULARITY_ROOTFS
+
+%post
+
+        # Create Installation Directories and export paths. This is needed as part of post.
+        # %environment scriptlet does not define these paths during %post, only after.
+        export INSTALLER_PATH=/installer
+        export SOFTWARE_PATH=/software
+        export PATH="/anaconda3/bin:$PATH"
+
+        #Installation of BLOBCAT
+        export BLOBCAT_PATH=$INSTALLER_PATH/BLOBCAT
+        mkdir $BLOBCAT_PATH
+        cd $BLOBCAT_PATH
+        wget -O blobcat-v1.2.tar.bz2 http://sourceforge.net/projects/blobcat/files/blobcat-v1.2.tar.bz2/download
+        tar xvjf blobcat-v1.2.tar.bz2
+
+        #Patch blobcat to run python2.7 and fix error on one line
+        patch blobcat.py /blobcat_patch.diff
+
+        #Remove unneccesary files and change dir
+        rm -f blobcat-v1.2.tar.bz2 /blobcat_patch.diff
+        cd $INSTALLER_PATH
+
+        #Upgrade pip
+        pip install --upgrade pip
+
+        #Installation of PASTA
+        pip install git+https://github.com/bwkeller/PASTA
+
+        #Update to PyBDSF for python3 (not currently working so don't overwrite working PyBDSF yet)
+        #pip install git+https://github.com/lofar-astron/PyBDSF
+
+        #Installation fits2hdf
+        pip install git+https://github.com/telegraphic/fits2hdf
+
+        #Installation of NOAO datalab client (for python2)
+        pip2 install datalab-client
+
+        #Install eog (and dependencies)
+        apt-get -y install eog
+        apt-get -yf install
+
+        #Installation of PINK (not currently working - see standalone PINK container)
+        #cd $INSTALLER_PATH
+        #wget https://github.com/HITS-AIN/PINK/releases/download/1.1/Pink-1.1-Linux.deb
+        #apt install -y ./Pink-1.1-Linux.deb
+
+        # Install updated pprocess for Python 3 use by Aegean
+        cd $INSTALLER_PATH
+        wget -O - http://www.boddie.org.uk/python/downloads/pprocess-0.5.3.tar.gz | tar -xz
+        cd pprocess-0.5.3
+        2to3 -w .
+        pip install --upgrade .
+
+        #Installation of tensorflow with conda
+        pip uninstall -y tensorflow
+        conda install -y tensorflow
+
+        #Install missing Astromatic software : https://www.astromatic.net (blindly copying previous syntax!)
+        cd $INSTALLER_PATH
+        wget https://www.astromatic.net/download/eye/eye-1.4.1.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/missfits/missfits-2.8.0.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/psfex/psfex-3.17.1.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/skymaker/skymaker-3.10.5.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/stiff/stiff-2.4.0.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/stuff/stuff-1.26.0.tar.gz -O - | tar -xz
+        wget https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz -O - | tar -xz
+
+        cd $INSTALLER_PATH/eye-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/missfits-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/psfex-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/skymaker-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/stiff-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/stuff-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+        cd $INSTALLER_PATH/weightwatcher-*
+        ./configure --with-atlas-incdir=/usr/include/atlas/ && make && make install
+
+        #Update PUMA for python3 use
+        cd $INSTALLER_PATH/PUMA
+        git pull
+
+        #Installation of pywcs tools (not currently working)
+        #pip2 install --upgrade pip
+        #pip2 install pywcs pywcsgrid2
+
+        # Cleanup the container
+        apt-get clean
+        apt-get autoclean
+
+%runscript
+
+        /anaconda3/bin/python "$@"

@@ -1,0 +1,11 @@
+1c1
+< #!/usr/bin/env python
+---
+> #!/usr/bin/python2.7
+1037,1038c1037,1039
+<         npixRA = border[1] - border[0]
+< 	npixDec = border[3] - border[2]
+---
+> 	# Mladen Novak: add +1, otherwise the length is wrong
+>         npixRA = border[1] - border[0] + 1
+> 	npixDec = border[3] - border[2] + 1

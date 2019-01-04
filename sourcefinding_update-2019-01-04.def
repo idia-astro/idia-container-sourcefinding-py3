@@ -1,0 +1,26 @@
+Bootstrap: localimage
+From: /mnt/jeremy/containers/sourcefinding_py3_update/sourcefinding_py3-2018-11-08.simg
+Include: software-properties-common
+
+%post
+        export INSTALLER_PATH=/installer
+        export SOFTWARE_PATH=/software
+        export PATH="/anaconda3/bin:$PATH"
+
+        pip install acor future pybind11
+
+	pip --no-cache-dir install galsim
+
+	# Update PASTA with the genstack.py
+	pip install --upgrade git+https://github.com/bwkeller/PASTA
+
+	# Install PYDS9 from https://github.com/ericmandel/pyds9
+	apt-get install libxt-dev
+	pip install --upgrade pyds9
+
+	# Install VAEX
+	pip install --pre vaex
+		
+	# Cleanup
+        apt-get clean
+        apt-get autoclean
